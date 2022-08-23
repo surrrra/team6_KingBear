@@ -1,0 +1,322 @@
+---
+title: "PBJ 야구"
+format: html
+editor: visual
+---
+
+### 데이터 전처리
+
+```{r include=F}
+knitr::opts_chunk$set(warning = F)
+knitr::opts_chunk$set(message = F)
+```
+
+```{r}
+df <- read.csv("kbopitchingdata.csv")
+# View(df)
+str(df)
+
+# 결측치가 있어서 필요 없는 컬럼 제거
+df_01 <- subset(df, select=-c(games_started,games_finished,intentional_walks, balks, wild_pitches))
+
+# 연도별 바뀐 팀들을 현대의 이름으로 재정렬
+for (i in (1:length(df_01$team))){
+  if(df_01$team[i] == 'MBC Blue Dragons'){
+    df_01$team[i] = 'LG Twins'
+  } else if(df_01$team[i] == 'OB Bears'){
+    df_01$team[i] = 'Doosan Bears'
+  } else if(df_01$team[i] == 'Nexen Heroes' | df_01$team[i] == 'Woori Heroes'){
+    df_01$team[i] = 'Kiwoom Heroes'
+  } else if(df_01$team[i] == 'SK Wyverns'){
+    df_01$team[i] = 'SSG Landers'
+  } else if(df_01$team[i] == 'Binggre Eagles'){
+    df_01$team[i] = 'Hanwha Eagles'
+  } else if(df_01$team[i] == 'Haitai Tigers'){
+    df_01$team[i] = 'Kia Tigers'
+  } else if(df_01$team[i] == 'Pacific Dolphins' | df_01$team[i] == 'Chungbo Pintos' | df_01$team[i] == 'Sammi Superstars'){
+    df_01$team[i] = 'Hyundai Unicorns'
+  }
+}
+```
+
+## KBO 리그 선수들의 나이 : Horizontal Violin Graph
+
+<https://r-graph-gallery.com/violin_horizontal_ggplot2.html>
+
+```{r}
+# Libraries
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(forcats)
+library(hrbrthemes)
+library(viridis)
+library(plotly)
+
+# library(extrafont)
+# font_import(paths=NULL, recursive = TRUE, prompt=TRUE, pattern=NULL) # "윈도우즈 폰트데이터베이스에서 찾을 수 없는 폰트페밀리입니다" 오류 해결, 30분 이상 소요
+
+# Plot
+
+p <- df_01 |>
+  ggplot( aes(x=team, y=average_age, fill=team, color=team)) +
+    geom_violin(width=1.6, size=0.5) +
+    scale_fill_viridis(discrete=TRUE) +
+    scale_color_viridis(discrete=TRUE) +
+    theme_ipsum() +
+    theme(
+      legend.position="none"
+    ) +
+    coord_flip() + # This switch X and Y axis and allows to get the horizontal version
+    xlab("") +
+    ylab("age")
+
+p
+```
+
+<https://plotly.com/r/violin/>
+
+```{r}
+library(plotly)
+
+fig <- df_01 %>%
+  plot_ly(
+    x = ~team,
+    y = ~average_age,
+    split = ~team,
+    type = 'violin',
+    box = list(
+      visible = T
+    ),
+    meanline = list(
+      visible = T
+    )
+  ) 
+
+fig <- fig %>%
+  layout(
+    xaxis = list(
+      title = "KBO TEAM"
+    ),
+    yaxis = list(
+      title = "AGE",
+      zeroline = F
+    )
+  )
+
+fig
+```
+
+<https://plotly.com/r/cumulative-animations/>
+
+```{r}
+library(plotly)
+
+accumulate_by <- function(dat, var) {
+  var <- lazyeval::f_eval(var, dat)
+  lvls <- plotly:::getLevels(var)
+  dats <- lapply(seq_along(lvls), function(x) {
+    cbind(dat[var %in% lvls[seq(1, x)], ], frame = lvls[[x]])
+  })
+  dplyr::bind_rows(dats)
+}
+
+fig <- df_01 %>%
+  filter(year > 1981, team %in% c("Doosan Bears", "LG Twins", "Samsung Lions", "Hanwha Eagles", "Kia Tigers", "Lotte Giants"))
+fig <- fig %>% accumulate_by(~year)
+
+
+fig <- fig %>%
+  plot_ly(
+    x = ~year, 
+    y = ~average_age,
+    split = ~team,
+    frame = ~frame,
+    type = 'scatter',
+    mode = 'lines', 
+    line = list(simplyfy = F)
+  )
+fig <- fig %>% layout(
+  xaxis = list(
+    title = "Date",
+    zeroline = F
+  ),
+  yaxis = list(
+    title = "average_age",
+    zeroline = F
+  )
+) 
+fig <- fig %>% animation_opts(
+  frame = 100, 
+  transition = 0, 
+  redraw = FALSE
+)
+fig <- fig %>% animation_slider(
+  currentvalue = list(
+    prefix = "year"
+  )
+)
+
+fig
+```
+
+### KBO 리그 승률, 승 : Stacked Funnel Plot
+
+<https://plotly.com/r/funnel-charts/>
+
+```{r}
+# library(showtext) # 다운로드 없이 구글 제공 폰트 사용
+# font_add_google("Gochi Hand", "gochi")
+
+# Need to install plotly from Github to get funnel plots
+# devtools::install_github("ropensci/plotly")
+
+library(plotly)
+df_2021 <- subset(df_01, year==2021) # 2021년 데이터만 추출
+df_2021<-df_2021 |>
+  arrange(desc(wins)) # wins 내림차순으로 정렬
+
+fig <- plot_ly(
+    type = "funnel",
+    name = 'win_loss_percentage',
+    y = df_2021$team,
+    x = df_2021$win_loss_percentage*100,
+    textposition = "inside",
+    textinfo = "value+percent total")
+
+fig <- fig %>%
+  add_trace(
+    type = "funnel",
+    name = 'wins',
+    y = df_2021$team,
+    x = df_2021$wins,
+    textposition = "inside",
+    textinfo = "value+percent total")
+
+fig <- fig %>%
+  layout(yaxis = list(categoryarray = c(1:6)))
+
+fig
+```
+
+### KBO 선수들의 실책 : 3D Bubble Plot
+
+<https://plotly.com/r/3d-scatter-plots/>
+
+```{r}
+library(plotly)
+
+df_2021 <- df_2021[order(df_2021$team), ]
+
+fig <- plot_ly(df_2021, x = ~runs, y = ~hits, z = ~walks, color = ~team, size = ~wins,
+             marker = list(symbol = 'circle', sizemode = 'diameter'), sizes = c(25, 50),
+             text = ~paste('runs : ', runs, '<br>hits : ', hits, '<br> walks :', walks, '<br> wins : ', wins))
+fig <- fig %>% layout(title = '선수들의 실책',
+                      
+         scene = list(xaxis = list(title = 'runs',
+                      gridcolor = 'rgb(255, 255, 255)',
+                      type = 'log',
+                      zerolinewidth = 1,
+                      ticklen = 5,
+                      gridwidth = 2),
+                      
+               yaxis = list(title = 'hits',
+                      gridcolor = 'rgb(255, 255, 255)',
+                      zerolinewidth = 1,
+                      ticklen = 5,
+                      gridwith = 2),
+               
+               zaxis = list(title = 'walks',
+                            gridcolor = 'rgb(255, 255, 255)',
+                            type = 'log',
+                            zerolinewidth = 1,
+                            ticklen = 5,
+                            gridwith = 2)),
+         
+         paper_bgcolor = 'rgb(243, 243, 243)',
+         plot_bgcolor = 'rgb(243, 243, 243)')
+
+fig
+```
+
+### rayshader
+
+<https://www.rayshader.com/index.html>
+
+```{r}
+# To install the latest version from Github:
+# install.packages("devtools")
+# devtools::install_github("tylermorganwall/rayshader")
+library(devtools)
+
+# install.packages("rayrender")
+library(rayrender)
+
+## 
+## Attaching package: 'rayrender'
+
+## The following object is masked from 'package:rgl':
+## 
+##     text3d
+# install.packages("rgl")
+library(rgl)
+
+# install.packages("rayshader")
+library(rayshader)
+
+# install.packages("rgdal")
+library(rgdal)
+
+library(raster)
+
+library(viridis)
+```
+
+```{r}
+library(ggplot2)
+
+mtplot <-  ggplot(mtcars) + 
+  geom_point(aes(x = mpg, y = disp, color = cyl)) + 
+  scale_color_continuous(limits = c(0, 1))
+
+par(mfrow = c(1, 2))
+plot_gg(mtplot, width = 3.5, raytrace = FALSE, preview = TRUE)
+
+plot_gg(mtplot, width = 3.5, multicore = TRUE, windowsize = c(800, 800), 
+        zoom = 0.85, phi = 35, theta = 30, sunangle = 225, soliddepth = -10)
+Sys.sleep(0.2)
+render_snapshot(clear = TRUE)
+
+```
+
+```{r}
+library(rayrender)
+
+montereybay %>%
+    sphere_shade(zscale = 10, texture = "imhof1") %>%
+    plot_3d(montereybay, zscale = 50, fov = 70, theta = 270, phi = 30, 
+            windowsize = c(1000, 800), zoom = 0.6,  
+            water = TRUE, waterdepth = 0, wateralpha = 0.5, watercolor = "#233aa1",
+            waterlinecolor = "white", waterlinealpha = 0.5)
+Sys.sleep(0.2)
+render_highquality(lightdirection = c(-45,45), lightaltitude  = 30, clamp_value = 10, 
+                   samples = 256, camera_lookat= c(0,-50,0),
+                   ground_material = diffuse(color="grey50",checkercolor = "grey20", checkerperiod = 100),
+                   clear = TRUE)
+```
+
+```{r}
+ggdiamonds = ggplot(diamonds) +
+  stat_density_2d(aes(x = x, y = depth, fill = stat(nlevel)), 
+                  geom = "polygon", n = 200, bins = 50,contour = TRUE) +
+  facet_wrap(clarity~.) +
+  scale_fill_viridis_c(option = "A")
+
+par(mfrow = c(1, 2))
+
+plot_gg(ggdiamonds, width = 5, height = 5, raytrace = FALSE, preview = TRUE)
+plot_gg(ggdiamonds, width = 5, height = 5, multicore = TRUE, scale = 250, 
+        zoom = 0.7, theta = 10, phi = 30, windowsize = c(800, 800))
+Sys.sleep(0.2)
+render_snapshot(clear = TRUE)
+```

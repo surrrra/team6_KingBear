@@ -1,0 +1,13 @@
+name: PBJ_Baseball_Shiny
+title: PBJ_Baseball_Shiny
+username:
+account: qud0511
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 6828211
+bundleId: 6227887
+url: https://qud0511.shinyapps.io/PBJ_Baseball_Shiny/
+when: 1661227588.40986
+lastSyncTime: 1661227588.40987
+asMultiple: FALSE
+asStatic: FALSE
