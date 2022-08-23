@@ -9,6 +9,7 @@ https://surrrra.shinyapps.io/project/
 https://hojin1014.shinyapps.io/project9/
 
 #### 박병준
+https://qud0511.shinyapps.io/PBJ_Baseball_Shiny/
 
 #### 곽성화
 https://misohwa.shinyapps.io/thirdProject/
