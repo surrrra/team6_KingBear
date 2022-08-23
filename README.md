@@ -4,8 +4,9 @@
 https://surrrra.shinyapps.io/project/
 
 #### 이재훈
-https://hojin1014.shinyapps.io/project9/
+
 
 #### 이호진
+https://hojin1014.shinyapps.io/project9/
 
 #### 박병준
