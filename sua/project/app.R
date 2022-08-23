@@ -54,9 +54,11 @@ ui<-pageWithSidebar(
   ),
 
   mainPanel(
-    plotOutput('teamplot'),
-    plotlyOutput('lollipop'),
-    plotlyOutput('ERA')
+    tabsetPanel(
+      tabPanel('Stat', plotOutput('teamplot')),
+      tabPanel('Wins', plotlyOutput('lollipop')),
+      tabPanel('ERA', plotlyOutput('ERA'))
+      )
     )
 )
 
