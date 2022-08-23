@@ -5,9 +5,9 @@ account: surrrra
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 6827873
-bundleId: 6227492
+bundleId: 6227717
 url: https://surrrra.shinyapps.io/project/
-when: 1661217433.76027
-lastSyncTime: 1661217433.76029
+when: 1661224457.64588
+lastSyncTime: 1661224457.64592
 asMultiple: FALSE
 asStatic: FALSE

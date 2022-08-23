@@ -6,7 +6,7 @@ library(dplyr)
 library(hrbrthemes)
 library(gganimate)
 
-df<-read.csv('../kbopitchingdata.csv')
+df<-read.csv('kbopitchingdata.csv')
 
 # 결측치가 있어서 필요 없는 컬럼 제거
 df <- subset(df, select=-c(games_started,games_finished,intentional_walks,balks,wild_pitches))
@@ -37,13 +37,6 @@ min.max.scale<-function (x) {
   return ((x-min(x))/(max(x)-min(x)))
 }
 
-df$hits_9_mn<-min.max.scale(df$hits_9)
-df$homeruns_9_mn<-min.max.scale(df$homeruns_9)
-df$walks_9_mn<-min.max.scale(df$walks_9)
-df$strikeouts_9_mn<-min.max.scale(df$strikeouts_9)
-df$earned_runs_mn<-min.max.scale(df$earned_runs)
-
-summary(df)
 
 
 
@@ -67,11 +60,18 @@ ui<-pageWithSidebar(
     )
 )
 
+
 colnames(df)
 server<-function (input, output) {
   output$teamplot<-renderPlot({
+    df$hits_9<-min.max.scale(df$hits_9)
+    df$homeruns_9<-min.max.scale(df$homeruns_9)
+    df$walks_9<-min.max.scale(df$walks_9)
+    df$strikeouts_9<-min.max.scale(df$strikeouts_9)
+    df$earned_runs<-min.max.scale(df$earned_runs)
+    
     df<-subset(df, year==input$years)
-    df<-df[(df$team==input$teams1) | (df$team==input$teams2), c(30:34)]
+    df<-df[(df$team==input$teams1) | (df$team==input$teams2), c(18, 25:28)]
     df<-rbind(rep(1, 5), rep(0, 5), df)
     colors_border=c( rgb(0.2,0.5,0.5,0.9), rgb(0.8,0.2,0.5,0.9))
     colors_in=c( rgb(0.2,0.5,0.5,0.4), rgb(0.8,0.2,0.5,0.4))
@@ -85,13 +85,11 @@ server<-function (input, output) {
     
     legend(x=0.7, y=1, legend = c(input$teams1, input$teams2), bty = "n", pch=20 , col=colors_in , text.col = "grey", cex=1.2, pt.cex=3)
     
-    title('팀 능력치 비교', cex.main=2)
+    title('team stat', cex.main=2)
   })
   
   output$lollipop<-renderPlotly({
     df<-subset(df, year==input$years)
-    #df<-df[(df$team==input$teams1) | (df$team==input$teams2), ]
-    
     
     p<-ggplot(df, aes(x=team, y=wins)) +
       geom_segment( aes(x=team, xend=team, y=0, yend=wins ), color=ifelse(df$team %in% c(input$teams1, input$teams2), "orange", "grey"), size=ifelse(df$team %in% c(input$teams1, input$teams2), 1.3, 1) ) +
@@ -110,7 +108,7 @@ server<-function (input, output) {
       ) +
       xlab("") +
       ylab("") +
-      ggtitle("승리 수 비교")
+      ggtitle("wins")
     
     ggplotly(p)
   })
@@ -137,8 +135,8 @@ server<-function (input, output) {
         axis.title.x=element_blank(),
         axis.title.y=element_blank()
       )+
-      ggtitle("ERA 비교")
-    #p+geom_vline(xintercept=input$years, color='red', linetype=2)
+      ggtitle("ERA")
+
     
     
     ggplotly(p)
