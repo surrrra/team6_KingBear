@@ -14,7 +14,7 @@ library(devtools)
 library(rayrender)
 
 ## 
-## Attaching package: 'rayrender'
+## Attaching package: 'rayrender' # rayrende 퍼블리쉬 오류..?
 
 ## The following object is masked from 'package:rgl':
 ## 
